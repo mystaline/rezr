@@ -43,6 +43,18 @@ npx wrangler dev
 
 ---
 
+## Testing
+
+Unit tests cover param parsing and image resize logic (no Workers runtime required):
+
+```sh
+cargo test
+```
+
+Integration testing (cache, full request flow) requires `wrangler dev` running and hitting `http://localhost:8787` directly.
+
+---
+
 ## Stack
 
 - Rust → WASM via [`worker-rs`](https://github.com/cloudflare/workers-rs)

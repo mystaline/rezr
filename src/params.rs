@@ -51,3 +51,79 @@ impl ResizeParams {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(query: &str) -> Result<ResizeParams, &'static str> {
+        let url = Url::parse(&format!("https://example.com/?{query}")).unwrap();
+        ResizeParams::from_url(&url)
+    }
+
+    #[test]
+    fn width_only_is_valid() {
+        let p = parse("src=https://img.example.com/a.jpg&w=400").unwrap();
+        assert_eq!(p.width, Some(400));
+        assert_eq!(p.height, None);
+    }
+
+    #[test]
+    fn height_only_is_valid() {
+        let p = parse("src=https://img.example.com/a.jpg&h=300").unwrap();
+        assert_eq!(p.width, None);
+        assert_eq!(p.height, Some(300));
+    }
+
+    #[test]
+    fn both_dims_valid() {
+        let p = parse("src=https://img.example.com/a.jpg&w=800&h=600").unwrap();
+        assert_eq!(p.width, Some(800));
+        assert_eq!(p.height, Some(600));
+    }
+
+    #[test]
+    fn missing_src_returns_error() {
+        assert!(parse("w=100").is_err());
+    }
+
+    #[test]
+    fn non_http_src_returns_error() {
+        assert!(parse("src=ftp://bad.example.com/a.jpg&w=100").is_err());
+    }
+
+    #[test]
+    fn missing_both_dims_returns_error() {
+        assert!(parse("src=https://img.example.com/a.jpg").is_err());
+    }
+
+    #[test]
+    fn quality_defaults_to_85() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100").unwrap();
+        assert_eq!(p.quality, 85);
+    }
+
+    #[test]
+    fn quality_clamped_to_range() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100&q=200").unwrap();
+        assert_eq!(p.quality, 100);
+    }
+
+    #[test]
+    fn width_clamped_to_8000() {
+        let p = parse("src=https://img.example.com/a.jpg&w=99999").unwrap();
+        assert_eq!(p.width, Some(8000));
+    }
+
+    #[test]
+    fn cache_key_suffix_both_dims() {
+        let p = parse("src=https://img.example.com/a.jpg&w=400&h=300&q=80").unwrap();
+        assert_eq!(p.cache_key_suffix(), "w400_h300_q80");
+    }
+
+    #[test]
+    fn cache_key_suffix_width_only() {
+        let p = parse("src=https://img.example.com/a.jpg&w=400").unwrap();
+        assert_eq!(p.cache_key_suffix(), "w400_hx_q85");
+    }
+}
