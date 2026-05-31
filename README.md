@@ -10,16 +10,18 @@ GET /?src=https://example.com/photo.jpg&w=400&q=80
 
 ## Query params
 
-| Param | Required | Description | Default | Range |
-|-------|----------|-------------|---------|-------|
+| Param | Required | Description | Default | Values |
+|-------|----------|-------------|---------|--------|
 | `src` | yes | Source image URL (http/https) | — | — |
 | `w` | one of w/h | Output width in px | — | 1–8000 |
 | `h` | one of w/h | Output height in px | — | 1–8000 |
 | `q` | no | JPEG quality | 85 | 1–100 |
+| `fit` | no | Resize mode | `contain` | `contain`, `exact`, `crop` |
 
-- Aspect ratio preserved when only `w` or `h` is given
-- Both `w` and `h` specified → exact dimensions, aspect ratio not preserved
-- Upscaling is skipped — if target > original, original is returned
+- `fit=contain` (default) — fits within the given box, aspect ratio always preserved
+- `fit=exact` — forces exact `w`×`h`, aspect ratio not preserved (warps image)
+- `fit=crop` — scales to cover the box preserving AR, center-crops overflow
+- Upscaling is skipped for `contain` and `exact` — if target > original, original is returned
 - Output is always JPEG
 
 ---

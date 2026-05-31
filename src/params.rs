@@ -1,11 +1,19 @@
 use url::Url;
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Fit {
+    Contain, // fit within box, aspect ratio preserved (default)
+    Exact,   // force exact dimensions, aspect ratio not preserved
+    Crop,    // scale to cover box preserving AR, center-crop overflow
+}
+
 #[derive(Debug, Clone)]
 pub struct ResizeParams {
     pub src: String,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub quality: u8,
+    pub fit: Fit,
 }
 
 impl ResizeParams {
@@ -39,15 +47,27 @@ impl ResizeParams {
             .unwrap_or(85)
             .clamp(1, 100);
 
-        Ok(Self { src, width, height, quality })
+        let fit = match query.get("fit").map(|s| s.as_ref()) {
+            Some("exact") => Fit::Exact,
+            Some("crop")  => Fit::Crop,
+            _ => Fit::Contain,
+        };
+
+        Ok(Self { src, width, height, quality, fit })
     }
 
     pub fn cache_key_suffix(&self) -> String {
+        let fit_suffix = match self.fit {
+            Fit::Exact   => "_exact",
+            Fit::Crop    => "_crop",
+            Fit::Contain => "",
+        };
         format!(
-            "w{}_h{}_q{}",
+            "w{}_h{}_q{}{}",
             self.width.map_or("x".into(), |v| v.to_string()),
             self.height.map_or("x".into(), |v| v.to_string()),
             self.quality,
+            fit_suffix,
         )
     }
 }
@@ -116,6 +136,30 @@ mod tests {
     }
 
     #[test]
+    fn fit_defaults_to_contain() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100").unwrap();
+        assert_eq!(p.fit, Fit::Contain);
+    }
+
+    #[test]
+    fn fit_exact_parsed() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100&fit=exact").unwrap();
+        assert_eq!(p.fit, Fit::Exact);
+    }
+
+    #[test]
+    fn fit_crop_parsed() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100&h=100&fit=crop").unwrap();
+        assert_eq!(p.fit, Fit::Crop);
+    }
+
+    #[test]
+    fn fit_unknown_falls_back_to_contain() {
+        let p = parse("src=https://img.example.com/a.jpg&w=100&fit=fill").unwrap();
+        assert_eq!(p.fit, Fit::Contain);
+    }
+
+    #[test]
     fn cache_key_suffix_both_dims() {
         let p = parse("src=https://img.example.com/a.jpg&w=400&h=300&q=80").unwrap();
         assert_eq!(p.cache_key_suffix(), "w400_h300_q80");
@@ -125,5 +169,17 @@ mod tests {
     fn cache_key_suffix_width_only() {
         let p = parse("src=https://img.example.com/a.jpg&w=400").unwrap();
         assert_eq!(p.cache_key_suffix(), "w400_hx_q85");
+    }
+
+    #[test]
+    fn cache_key_suffix_exact_fit_appends_suffix() {
+        let p = parse("src=https://img.example.com/a.jpg&w=400&h=300&q=80&fit=exact").unwrap();
+        assert_eq!(p.cache_key_suffix(), "w400_h300_q80_exact");
+    }
+
+    #[test]
+    fn cache_key_suffix_crop_fit_appends_suffix() {
+        let p = parse("src=https://img.example.com/a.jpg&w=400&h=300&q=80&fit=crop").unwrap();
+        assert_eq!(p.cache_key_suffix(), "w400_h300_q80_crop");
     }
 }
