@@ -32,7 +32,7 @@ fn apply_resize(img: DynamicImage, width: Option<u32>, height: Option<u32>) -> D
         return img;
     }
 
-    img.resize(target_w, target_h, image::imageops::FilterType::Lanczos3)
+    img.resize_exact(target_w, target_h, image::imageops::FilterType::Lanczos3)
 }
 
 fn encode_jpeg(img: &DynamicImage, quality: u8) -> Result<Vec<u8>, String> {

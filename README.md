@@ -18,6 +18,7 @@ GET /?src=https://example.com/photo.jpg&w=400&q=80
 | `q` | no | JPEG quality | 85 | 1–100 |
 
 - Aspect ratio preserved when only `w` or `h` is given
+- Both `w` and `h` specified → exact dimensions, aspect ratio not preserved
 - Upscaling is skipped — if target > original, original is returned
 - Output is always JPEG
 
