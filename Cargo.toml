@@ -1,0 +1,19 @@
+[package]
+name = "rezr"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = "0.5"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+serde = { version = "1", features = ["derive"] }
+url = "2"
+urlencoding = "2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

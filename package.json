@@ -1,0 +1,13 @@
+{
+  "name": "rezr",
+  "version": "0.1.0",
+  "description": "Rust-based serverless image resizer for Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "worker-build --release"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}
